@@ -19,26 +19,6 @@ const routes = [
                 component: () => import('../views/OverviewView.vue')
             },
             {
-                path: 'ai-model-lab',
-                name: 'AIModelLab',
-                component: () => import('../views/AIModelLabView.vue')
-            },
-            {
-                path: 'iot-hardware',
-                name: 'IoTHardware',
-                component: () => import('../views/IoTHardwareView.vue')
-            },
-            {
-                path: 'system-logs',
-                name: 'SystemLogs',
-                component: () => import('../views/SystemLogsView.vue')
-            },
-            {
-                path: 'security',
-                name: 'Security',
-                component: () => import('../views/SecurityView.vue')
-            },
-            {
                 path: 'user-management',
                 name: 'UserManagement',
                 component: () => import('../views/UserManagementView.vue')

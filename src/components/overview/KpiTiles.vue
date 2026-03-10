@@ -1,5 +1,5 @@
 <template>
-  <div class="grid-4">
+  <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
     <div
       v-for="tile in tiles"
       :key="tile.title"
@@ -8,7 +8,7 @@
       <div class="kpi-tile">
         <div class="kpi-tile__info">
           <p class="kpi-tile__label">{{ tile.title }}</p>
-          <p class="kpi-tile__value">{{ tile.value }}</p>
+          <p class="kpi-tile__value">{{ loading ? '...' : tile.value }}</p>
           <p v-if="tile.trend" class="kpi-tile__trend">{{ tile.trend }}</p>
         </div>
         <div
@@ -23,38 +23,70 @@
 </template>
 
 <script setup>
-import { Users, Target, Scale, Database } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import { Users, Target, Activity } from 'lucide-vue-next'
+import { getDashboardStats } from '../../services/api.js'
 
-const tiles = [
+const loading = ref(true)
+
+const tiles = ref([
   {
-    title: 'Total Enrolled Research Subjects',
-    value: 127,
+    title: 'Total Active Participants',
+    value: 0,
     icon: Users,
-    trend: '+12 this month',
+    trend: 'Loading...',
     color: '#10b981'
   },
   {
-    title: 'Successful AI Identifications',
-    value: '82%',
+    title: 'Total Meals Logged This Week',
+    value: 0,
     icon: Target,
-    trend: 'Above 75% target',
-    color: '#10b981'
+    trend: 'Loading...',
+    color: '#3b82f6'
   },
   {
-    title: 'Avg Scale Measurement Stability',
-    value: '1.5s',
-    icon: Scale,
-    trend: 'Optimal range',
+    title: 'Avg. Caloric Target Adherence',
+    value: 0,
+    icon: Activity,
+    trend: 'Loading...',
     color: '#f59e0b'
-  },
-  {
-    title: 'Synced Logs Today',
-    value: '2,847',
-    icon: Database,
-    trend: 'Last sync: 2 min ago',
-    color: '#10b981'
   }
-]
+])
+
+onMounted(async () => {
+  try {
+    const stats = await getDashboardStats()
+
+    tiles.value = [
+      {
+        title: 'Total Active Participants',
+        value: stats.activeParticipants,
+        icon: Users,
+        trend: 'Users with tracking streak',
+        color: '#10b981'
+      },
+      {
+        title: 'Total Meals Logged This Week',
+        value: stats.mealsThisWeek,
+        icon: Target,
+        trend: 'Past 7 days',
+        color: '#3b82f6'
+      },
+      {
+        title: 'Avg. Caloric Target Adherence',
+        value: `${stats.adherence}%`,
+        icon: Activity,
+        trend: 'Estimated from avg daily intake',
+        color: '#f59e0b'
+      }
+    ]
+  } catch (err) {
+    console.error('Failed to load dashboard stats:', err)
+    tiles.value[0].trend = 'Could not connect to API'
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>

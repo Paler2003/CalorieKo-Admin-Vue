@@ -1,213 +1,269 @@
 <template>
-  <div class="report-gen">
-    <div class="report-layout">
-      <!-- Left: Configuration Panel -->
-      <div class="ck-card ck-card--elevated config-panel">
-        <h2 class="page-title">Report Generator</h2>
-        <p class="page-subtitle" style="margin-bottom: 1.5rem;">
-          Generate & Export Research Reports
-        </p>
+  <div class="report-gen" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Top: Live Preview -->
+    <div class="ck-card ck-card--elevated preview-panel" style="width: 100%;">
+      <div class="preview-header">
+        <h3 class="section-title">Live Preview</h3>
+        <span class="ck-badge ck-badge--outline">{{ currentReportLabel }}</span>
+      </div>
 
-        <!-- Report Type -->
-        <div class="form-section">
-          <label class="form-label">Report Type</label>
-          <div class="report-types">
-            <button
-              v-for="type in reportTypes"
-              :key="type.id"
-              class="report-type-btn"
-              :class="{ 'report-type-btn--active': selectedType === type.id }"
-              @click="selectedType = type.id"
-            >
-              <component :is="type.icon" :size="20" />
-              <span>{{ type.label }}</span>
-            </button>
-          </div>
+      <!-- Preview Content -->
+      <div class="preview-content custom-scrollbar">
+        <div v-if="loadingPreview" class="empty-state" style="padding: 2rem; text-align: center;">
+            <p>Loading real-time data preview...</p>
         </div>
-
-        <!-- Date Range -->
-        <div class="form-section">
-          <label class="form-label">Date Range</label>
-          <div class="date-inputs">
-            <input type="date" v-model="dateFrom" class="ck-input" />
-            <span class="date-sep">to</span>
-            <input type="date" v-model="dateTo" class="ck-input" />
-          </div>
+        <div v-else-if="previewData.length > 0">
+            <div class="table-wrapper" style="overflow-x: auto; max-height: 400px;">
+              <table class="ck-table" style="font-size: 0.75rem; white-space: nowrap;">
+                <thead>
+                  <tr>
+                    <th v-for="h in previewHeaders" :key="h">{{ h }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in previewData" :key="idx">
+                    <td v-for="(val, colIdx) in Object.values(row)" :key="colIdx">
+                      {{ val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val).substring(0,30) + '...' : String(val)) : '—' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+              <div class="preview-note" style="margin-top: 0;">
+                <InfoIcon :size="16" style="color: var(--ck-blue); flex-shrink: 0;" />
+                <span style="font-size: 0.75rem; color: var(--ck-gray-600);">Live snapshot. Click Export to download full dataset.</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--ck-gray-500); font-weight: 500;">Showing top {{ previewData.length }} rows</span>
+            </div>
         </div>
-
-        <!-- Dish Selection -->
-        <div class="form-section">
-          <label class="form-label">Dish Selection</label>
-          <select v-model="selectedDish" class="ck-select">
-            <option value="all">All Dishes</option>
-            <option v-for="dish in dishOptions" :key="dish" :value="dish">{{ dish }}</option>
-          </select>
+        <div v-else class="empty-state" style="padding: 2rem; text-align: center;">
+            <p>No data available in this table right now.</p>
         </div>
+      </div>
+    </div>
 
-        <!-- User Group -->
-        <div class="form-section">
-          <label class="form-label">User Group</label>
-          <select v-model="selectedGroup" class="ck-select">
-            <option value="all">All Participants</option>
-            <option value="active">Active Only</option>
-            <option value="high-consistency">High Consistency (>80%)</option>
-          </select>
-        </div>
+    <!-- Bottom: Configuration Panel -->
+    <div class="ck-card ck-card--elevated config-panel" style="width: 100%;">
+      <h2 class="page-title">Report Configuration</h2>
+      <p class="page-subtitle" style="margin-bottom: 1.5rem;">
+        Generate & Export Research Reports based on the active preview dataset.
+      </p>
 
-        <!-- Export Buttons -->
-        <div class="export-actions">
-          <button class="ck-btn ck-btn--primary" style="flex: 1;">
-            <FileTextIcon :size="20" />
-            <span>Export as PDF</span>
-          </button>
-          <button class="ck-btn ck-btn--dark" style="flex: 1;">
-            <TableIcon :size="20" />
-            <span>Export as CSV</span>
+      <!-- Report Type Selector -->
+      <div class="form-section">
+        <div class="report-types" style="display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem;">
+          <button
+            v-for="type in reportTypes"
+            :key="type.id"
+            class="report-type-btn"
+            :class="{ 'report-type-btn--active': selectedType === type.id }"
+            @click="selectedType = type.id"
+            style="flex: 1; min-width: 150px; white-space: nowrap;"
+          >
+            <component :is="type.icon" :size="20" />
+            <span>{{ type.label }}</span>
           </button>
         </div>
       </div>
 
-      <!-- Right: Live Preview -->
-      <div class="ck-card ck-card--elevated preview-panel">
-        <div class="preview-header">
-          <h3 class="section-title">Live Preview</h3>
-          <span class="ck-badge ck-badge--outline">{{ currentReport.label }}</span>
-        </div>
-
-        <!-- Preview Content -->
-        <div class="preview-content custom-scrollbar">
-          <div class="preview-meta">
-            <div class="preview-meta__row">
-              <span>Report Type:</span>
-              <strong>{{ currentReport.label }}</strong>
-            </div>
-            <div class="preview-meta__row">
-              <span>Date Range:</span>
-              <strong>{{ dateFrom || 'Not set' }} — {{ dateTo || 'Not set' }}</strong>
-            </div>
-            <div class="preview-meta__row">
-              <span>Dishes:</span>
-              <strong>{{ selectedDish === 'all' ? 'All Dishes' : selectedDish }}</strong>
-            </div>
-            <div class="preview-meta__row">
-              <span>User Group:</span>
-              <strong>{{ groupLabel }}</strong>
-            </div>
-          </div>
-
-          <div class="preview-divider"></div>
-
-          <!-- Sample Report Data -->
-          <h4 class="preview-section-title">Sample Data Preview</h4>
-          <div class="table-wrapper">
-            <table class="ck-table">
-              <thead>
-                <tr>
-                  <th v-for="col in currentReport.columns" :key="col">{{ col }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, i) in currentReport.sampleData" :key="i">
-                  <td v-for="(val, j) in row" :key="j">{{ val }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="preview-note">
-            <InfoIcon :size="16" style="color: var(--ck-blue); flex-shrink: 0;" />
-            <span>Showing sample data. Full report will contain {{ currentReport.totalRows }} records.</span>
-          </div>
-        </div>
+      <!-- Export Buttons -->
+      <div class="export-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <button @click="exportCSV" class="ck-btn ck-btn--outline" style="flex: 1;" :disabled="isExporting">
+          <TableIcon :size="20" />
+          <span>{{ isExporting ? '...' : 'Export CSV' }}</span>
+        </button>
+        <button @click="exportPDF" class="ck-btn ck-btn--dark" style="flex: 1;" :disabled="isExporting">
+          <FileTextIcon :size="20" />
+          <span>{{ isExporting ? '...' : 'Export PDF' }}</span>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, markRaw } from 'vue'
+import { ref, computed, markRaw, onMounted, watch } from 'vue'
 import {
-  Target,
+  Users,
   Utensils,
   Activity,
-  Cpu,
-  FileText as FileTextIcon,
+  Database,
   Table as TableIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  FileText as FileTextIcon
 } from 'lucide-vue-next'
+import { getProfiles, getNutritionSummaries, getMealLogs, getActivityLogs } from '../services/api.js'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
-const selectedType = ref('ai')
-const dateFrom = ref('2025-01-01')
-const dateTo = ref('2025-02-19')
-const selectedDish = ref('all')
-const selectedGroup = ref('all')
+const selectedType = ref('profiles')
+const isExporting = ref(false)
 
 const reportTypes = [
-  { id: 'ai', label: 'AI Accuracy', icon: markRaw(Target) },
-  { id: 'nutrition', label: 'Nutritional Summary', icon: markRaw(Utensils) },
-  { id: 'tdee', label: 'TDEE Correlation', icon: markRaw(Activity) },
-  { id: 'hardware', label: 'Hardware Reliability', icon: markRaw(Cpu) }
+  { id: 'profiles', label: 'User Profiles', icon: markRaw(Users) },
+  { id: 'nutrition', label: 'Daily Nutrition Summaries', icon: markRaw(Database) },
+  { id: 'meals', label: 'Meal Logs & Items', icon: markRaw(Utensils) },
+  { id: 'activities', label: 'Activity Logs', icon: markRaw(Activity) }
 ]
 
-const dishOptions = ['Law-uy', 'Balbacua', 'Humba', 'Pork Adobo', 'Chicken Adobo', 'Sinigang na Baboy', 'Tinola', 'Kare-Kare', 'Pancit Canton', 'Lumpia Shanghai']
+const currentReportLabel = computed(() => reportTypes.find(t => t.id === selectedType.value)?.label)
 
-const groupLabel = computed(() => {
-  const map = { all: 'All Participants', active: 'Active Only', 'high-consistency': 'High Consistency (>80%)' }
-  return map[selectedGroup.value]
-})
+// Preview Logic
+const previewData = ref([])
+const previewHeaders = ref([])
+const loadingPreview = ref(false)
 
-const reportData = {
-  ai: {
-    label: 'AI Accuracy Report',
-    columns: ['Dish', 'Samples', 'Accuracy (%)', 'Confused With'],
-    sampleData: [
-      ['Law-uy', '142', '81.2%', 'Bulalo'],
-      ['Balbacua', '128', '76.8%', 'Kaldereta'],
-      ['Humba', '156', '72.4%', 'Pork Adobo'],
-      ['Pork Adobo', '203', '84.6%', 'Humba'],
-      ['Chicken Adobo', '198', '87.3%', 'Tinola']
-    ],
-    totalRows: 42
-  },
-  nutrition: {
-    label: 'Nutritional Summary Report',
-    columns: ['Date', 'Avg. Logged (kcal)', 'Avg. Burned (kcal)', 'Deficit/Surplus'],
-    sampleData: [
-      ['Feb 13', '2,150', '2,080', '+70 kcal'],
-      ['Feb 14', '1,980', '2,040', '-60 kcal'],
-      ['Feb 15', '2,310', '2,150', '+160 kcal'],
-      ['Feb 16', '2,050', '2,020', '+30 kcal'],
-      ['Feb 17', '2,240', '2,200', '+40 kcal']
-    ],
-    totalRows: 127
-  },
-  tdee: {
-    label: 'TDEE Correlation Report',
-    columns: ['Participant', 'Predicted TDEE', 'Actual Intake', 'Correlation'],
-    sampleData: [
-      ['P-0001', '1,850', '1,920', '96.3%'],
-      ['P-0002', '2,200', '2,150', '97.7%'],
-      ['P-0003', '1,750', '1,680', '96.0%'],
-      ['P-0006', '2,100', '2,050', '97.6%'],
-      ['P-0007', '1,800', '1,870', '96.1%']
-    ],
-    totalRows: 89
-  },
-  hardware: {
-    label: 'Hardware Reliability Report',
-    columns: ['Scale ID', 'Uptime', 'Avg Signal', 'Data Capture Rate'],
-    sampleData: [
-      ['SC-001', '99.8%', '-38 dBm', '97.2%'],
-      ['SC-012', '98.5%', '-45 dBm', '95.1%'],
-      ['SC-053', '99.9%', '-39 dBm', '98.4%'],
-      ['SC-068', '97.2%', '-44 dBm', '94.8%'],
-      ['SC-074', '99.7%', '-36 dBm', '98.9%']
-    ],
-    totalRows: 18
+const loadPreview = async () => {
+  loadingPreview.value = true
+  previewData.value = []
+  previewHeaders.value = []
+  try {
+    let data = []
+    if (selectedType.value === 'profiles') data = await getProfiles()
+    else if (selectedType.value === 'nutrition') data = await getNutritionSummaries()
+    else if (selectedType.value === 'meals') data = await getMealLogs()
+    else if (selectedType.value === 'activities') data = await getActivityLogs()
+
+    if (data && data.length > 0) {
+      previewHeaders.value = Object.keys(data[0])
+      previewData.value = data.slice(0, 5) // top 5 rows
+    }
+  } catch (err) {
+    console.error("Preview load error:", err)
+  } finally {
+    loadingPreview.value = false
   }
 }
 
-const currentReport = computed(() => reportData[selectedType.value])
+onMounted(() => loadPreview())
+watch(selectedType, () => loadPreview())
+
+// CSV Export Logic
+const exportCSV = async () => {
+  if (isExporting.value) return
+  isExporting.value = true
+
+  try {
+    let data = []
+    let filename = ''
+
+    if (selectedType.value === 'profiles') {
+      data = await getProfiles()
+      filename = `user_profiles_export_${new Date().toISOString().split('T')[0]}.csv`
+    } else if (selectedType.value === 'nutrition') {
+      data = await getNutritionSummaries()
+      filename = `daily_nutrition_export_${new Date().toISOString().split('T')[0]}.csv`
+    } else if (selectedType.value === 'meals') {
+      data = await getMealLogs()
+      filename = `meal_logs_export_${new Date().toISOString().split('T')[0]}.csv`
+    } else if (selectedType.value === 'activities') {
+      data = await getActivityLogs()
+      filename = `activity_logs_export_${new Date().toISOString().split('T')[0]}.csv`
+    }
+
+    if (!data || data.length === 0) {
+      alert("No data available to export.")
+      isExporting.value = false
+      return
+    }
+
+    // Convert JSON to CSV String
+    const headers = Object.keys(data[0]).join(',')
+    const rows = data.map(obj =>
+      Object.values(obj).map(val => {
+        let str = val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : ''
+        // Escape quotes and commas
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          str = `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }).join(',')
+    ).join('\n')
+
+    const csvContent = headers + '\n' + rows
+
+    // Create a Blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+  } catch (error) {
+    console.error("Export failed:", error)
+    alert("Failed to export CSV. Please check the console.")
+  } finally {
+    isExporting.value = false
+  }
+}
+
+// PDF Export Logic
+const exportPDF = async () => {
+  if (isExporting.value) return
+  isExporting.value = true
+
+  try {
+    let data = []
+    let filename = ''
+    let title = ''
+
+    if (selectedType.value === 'profiles') {
+      data = await getProfiles()
+      filename = `user_profiles_${new Date().toISOString().split('T')[0]}.pdf`
+      title = 'User Profiles Report'
+    } else if (selectedType.value === 'nutrition') {
+      data = await getNutritionSummaries()
+      filename = `daily_nutrition_${new Date().toISOString().split('T')[0]}.pdf`
+      title = 'Daily Nutrition Summaries'
+    } else if (selectedType.value === 'meals') {
+      data = await getMealLogs()
+      filename = `meal_logs_${new Date().toISOString().split('T')[0]}.pdf`
+      title = 'Meal Logs Report'
+    } else if (selectedType.value === 'activities') {
+      data = await getActivityLogs()
+      filename = `activity_logs_${new Date().toISOString().split('T')[0]}.pdf`
+      title = 'Activity Logs Report'
+    }
+
+    if (!data || data.length === 0) {
+      alert("No data available to export.")
+      isExporting.value = false
+      return
+    }
+
+    const doc = new jsPDF('landscape')
+    doc.text(title, 14, 15)
+    
+    const headers = Object.keys(data[0])
+    const rows = data.map(obj =>
+      Object.values(obj).map(val => {
+        return val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : ''
+      })
+    )
+
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 20,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [16, 185, 129] } // ck-primary color
+    })
+    
+    doc.save(filename)
+
+  } catch (error) {
+    console.error("PDF Export failed:", error)
+    alert("Failed to export PDF. Please check the console.")
+  } finally {
+    isExporting.value = false
+  }
+}
 </script>
 
 <style scoped>

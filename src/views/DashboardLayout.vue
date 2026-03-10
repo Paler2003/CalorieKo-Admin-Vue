@@ -27,6 +27,13 @@
           <component :is="item.icon" class="sidebar__nav-icon" />
           <span>{{ item.name }}</span>
         </router-link>
+
+        <div style="flex-grow: 1"></div>
+
+        <button @click="handleLogout" class="sidebar__nav-item sidebar__nav-item--logout">
+          <LogOutIcon class="sidebar__nav-icon" />
+          <span>Logout</span>
+        </button>
       </nav>
 
       <!-- Version Footer -->
@@ -65,35 +72,44 @@
       </main>
     </div>
   </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div v-if="showLogoutModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal__header">
+        <h3>Confirm Logout</h3>
+      </div>
+      <div class="modal__body">
+        <p>Are you sure you want to log out of your current session?</p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--secondary" @click="cancelLogout">Cancel</button>
+        <button class="btn btn--danger" @click="confirmLogout">Log Out</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router' // Add useRouter
 import {
   LayoutDashboard,
-  Brain,
-  Cpu,
-  FileText,
-  Shield,
   Users,
   FileBarChart,
   MapPin as MapPinIcon,
-  Lock as LockIcon
+  Lock as LockIcon,
+  LogOut as LogOutIcon // Add LogOut icon
 } from 'lucide-vue-next'
 
 const route = useRoute()
+const router = useRouter() // Initialize router
 
 const navItems = [
   { name: 'Overview', icon: LayoutDashboard, to: '/dashboard', routeName: 'Overview' },
-  { name: 'AI Model Lab', icon: Brain, to: '/dashboard/ai-model-lab', routeName: 'AIModelLab' },
-  { name: 'IoT Hardware', icon: Cpu, to: '/dashboard/iot-hardware', routeName: 'IoTHardware' },
-  { name: 'System Logs', icon: FileText, to: '/dashboard/system-logs', routeName: 'SystemLogs' },
-  { name: 'Security', icon: Shield, to: '/dashboard/security', routeName: 'Security' },
   { name: 'User Management', icon: Users, to: '/dashboard/user-management', routeName: 'UserManagement' },
   { name: 'Report Generator', icon: FileBarChart, to: '/dashboard/report-generator', routeName: 'ReportGenerator' }
 ]
-
 const isActive = (routeName) => route.name === routeName
 
 const pageTitle = computed(() => {
@@ -101,9 +117,27 @@ const pageTitle = computed(() => {
   if (route.name === 'Overview') return 'Research Overview'
   return currentNav?.name || 'Dashboard'
 })
+
+const showLogoutModal = ref(false)
+
+// Add Logout Function
+const handleLogout = () => {
+  showLogoutModal.value = true
+}
+
+const confirmLogout = () => {
+  sessionStorage.removeItem('ck_logged_in') // Clear session
+  router.push({ name: 'Login' }) // Redirect to the actual registered Login route
+  showLogoutModal.value = false
+}
+
+const cancelLogout = () => {
+  showLogoutModal.value = false
+}
 </script>
 
 <style scoped>
+
 .dashboard {
   display: flex;
   height: 100vh;
@@ -193,6 +227,18 @@ const pageTitle = computed(() => {
   background: var(--ck-primary) !important;
   color: white !important;
   box-shadow: var(--ck-shadow-lg);
+}
+.sidebar__nav-item--logout {
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  color: #ef4444; /* Using a red tone for destructive action */
+  margin-top: 1rem;
+}
+.sidebar__nav-item--logout:hover {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .sidebar__nav-icon {
@@ -290,5 +336,90 @@ const pageTitle = computed(() => {
 .content__inner {
   max-width: 80rem;
   margin: 0 auto;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: var(--ck-surface, #ffffff);
+  border-radius: var(--ck-radius-lg, 0.5rem);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--ck-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05));
+  overflow: hidden;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal__header {
+  padding: 1.5rem 1.5rem 1rem;
+}
+
+.modal__header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ck-gray-900, #111827);
+}
+
+.modal__body {
+  padding: 0 1.5rem 1.5rem;
+  color: var(--ck-gray-600, #4b5563);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.modal__footer {
+  padding: 1rem 1.5rem;
+  background: var(--ck-gray-50, #f9fafb);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(209, 213, 219, 0.5);
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--ck-radius-md, 0.375rem);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.btn--secondary {
+  background: white;
+  border-color: var(--ck-gray-300, #d1d5db);
+  color: var(--ck-gray-700, #374151);
+}
+
+.btn--secondary:hover {
+  background: var(--ck-gray-50, #f9fafb);
+}
+
+.btn--danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #dc2626;
 }
 </style>

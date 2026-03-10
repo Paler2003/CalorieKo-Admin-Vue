@@ -50,9 +50,14 @@
             </div>
           </div>
 
+          <!-- Error Message -->
+          <div v-if="errorMessage" class="login-page__error">
+            <p>{{ errorMessage }}</p>
+          </div>
+
           <!-- Submit -->
-          <button type="submit" class="ck-btn ck-btn--primary ck-btn--full login-page__submit">
-            Authorize Access
+          <button type="submit" class="ck-btn ck-btn--primary ck-btn--full login-page__submit" :disabled="loading">
+            {{ loading ? 'Authenticating...' : 'Authorize Access' }}
           </button>
 
           <!-- Session toggle -->
@@ -98,16 +103,33 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { User as UserIcon, Lock as LockIcon, Shield as ShieldIcon } from 'lucide-vue-next'
+import { adminLogin } from '../services/api.js'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
 const sessionPersistence = ref(false)
+const errorMessage = ref('')
+const loading = ref(false)
 
-const handleLogin = () => {
-  // Mock login — in production, validate via API
-  sessionStorage.setItem('ck_logged_in', 'true')
-  router.push({ name: 'Overview' })
+const handleLogin = async () => {
+  errorMessage.value = ''
+  loading.value = true
+
+  try {
+    const data = await adminLogin(email.value, password.value)
+
+    // Store the token and login state
+    sessionStorage.setItem('ck_logged_in', 'true')
+    sessionStorage.setItem('ck_token', data.token)
+    sessionStorage.setItem('ck_email', data.email)
+
+    router.push({ name: 'Overview' })
+  } catch (err) {
+    errorMessage.value = err.message || 'Invalid email or password.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
