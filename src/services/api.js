@@ -89,6 +89,11 @@ export async function getFoods() {
     return fetchJSON('/foods')
 }
 
+// ── System Logs ──
+export async function getSystemLogs() {
+    return fetchJSON('/system-logs')
+}
+
 // ── Daily Nutrition Summaries ──
 export async function getNutritionSummaries() {
     return fetchJSON('/nutrition-summaries')

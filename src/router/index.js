@@ -27,6 +27,11 @@ const routes = [
                 path: 'report-generator',
                 name: 'ReportGenerator',
                 component: () => import('../views/ReportGeneratorView.vue')
+            },
+            {
+                path: 'system-logs',
+                name: 'SystemLogs',
+                component: () => import('../views/SystemLogsView.vue')
             }
         ]
     }
