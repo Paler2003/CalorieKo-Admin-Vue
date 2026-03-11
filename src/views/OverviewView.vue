@@ -2,7 +2,7 @@
   <div class="overview">
     <KpiTiles />
 
-    <div class="grid-2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+    <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem;">
         <NutritionTrendsChart />
         <TopDishesChart />
     </div>

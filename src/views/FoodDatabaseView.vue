@@ -174,6 +174,15 @@
         </div>
       </div>
     </Teleport>
+    <!-- Toast Notification -->
+    <Teleport to="body">
+      <Transition name="toast-slide">
+        <div v-if="toast.show" class="ck-toast" :class="`ck-toast--${toast.type}`">
+          <span>{{ toast.message }}</span>
+          <button @click="toast.show = false" class="toast-close"><XIcon :size="14" /></button>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -195,6 +204,15 @@ const error = ref(null)
 
 const searchQuery = ref('')
 const categoryFilter = ref('all')
+
+// Toast State
+const toast = ref({ show: false, message: '', type: 'success' })
+const showToast = (message, type = 'success') => {
+  toast.value = { show: true, message, type }
+  setTimeout(() => {
+    toast.value.show = false
+  }, 4000)
+}
 
 // Modals
 const showModal = ref(false)
@@ -288,13 +306,15 @@ const submitForm = async () => {
       const updated = await updateFood(formData.value.food_id, formData.value)
       const index = foods.value.findIndex(f => f.food_id === updated.food_id)
       if (index !== -1) foods.value[index] = updated
+      showToast("Food item updated successfully.")
     } else {
       const created = await createFood(formData.value)
       foods.value.push(created)
+      showToast("Food item created successfully.")
     }
     closeModal()
   } catch (err) {
-    alert("An error occurred while saving the food item.")
+    showToast(err.message || "An error occurred while saving the food item.", 'error')
     console.error(err)
   } finally {
     isSubmitting.value = false
@@ -309,8 +329,9 @@ const confirmDelete = async () => {
     await deleteFood(id)
     foods.value = foods.value.filter(f => f.food_id !== id)
     closeDeleteModal()
+    showToast("Food item successfully deleted.")
   } catch (err) {
-    alert("An error occurred while deleting.")
+    showToast(err.message || "An error occurred while deleting.", 'error')
     console.error(err)
   } finally {
     isDeleting.value = false
@@ -355,6 +376,17 @@ const confirmDelete = async () => {
 .btn--primary { background: var(--ck-primary); color: white; }
 .btn--primary:hover { filter: brightness(1.1); }
 .btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
 .btn--danger { background: #ef4444; color: white; }
 .btn--danger:hover { background: #dc2626; }
+
+/* Toast */
+.ck-toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.25rem; border-radius: var(--ck-radius-md); background: white; box-shadow: var(--ck-shadow-2xl); display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; font-weight: 500; z-index: 10001; }
+.ck-toast--success { border-left: 4px solid #10b981; color: var(--ck-gray-900); }
+.ck-toast--error { border-left: 4px solid #ef4444; color: var(--ck-gray-900); }
+.toast-close { background: transparent; border: none; cursor: pointer; color: var(--ck-gray-400); padding: 0.125rem; display: flex; align-items: center; margin-left: auto; }
+.toast-close:hover { color: var(--ck-gray-700); }
+.toast-slide-enter-active, .toast-slide-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-slide-enter-from { opacity: 0; transform: translateY(1rem) scale(0.95); }
+.toast-slide-leave-to { opacity: 0; transform: translateY(1rem) scale(0.95); }
 </style>

@@ -5,12 +5,14 @@
       <p class="chart-subtitle" style="font-size: 0.875rem; color: var(--ck-gray-600);">Top 5 most pictured and logged dishes</p>
     </div>
 
-    <div v-if="loading" style="text-align: center; padding: 2rem; color: var(--ck-gray-500);">
-      Processing image log data...
+    <div v-if="loading" style="text-align: center; padding: 3rem 0; color: var(--ck-gray-500); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px;">
+      <p style="font-size: 0.875rem;">Processing image log data...</p>
     </div>
 
-    <div v-else-if="chartData.labels.length === 0" style="text-align: center; padding: 2rem; color: var(--ck-gray-500);">
-      Insufficient data to generate trends.
+    <div v-else-if="chartData.labels.length === 0" style="text-align: center; padding: 3rem 0; color: var(--ck-gray-500); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; background: var(--ck-gray-50); border-radius: var(--ck-radius-lg); border: 1px dashed var(--ck-gray-300);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem; color: var(--ck-gray-400);"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+      <p style="font-size: 0.875rem; font-weight: 500;">Insufficient data to generate trends.</p>
+      <p style="font-size: 0.75rem; margin-top: 0.25rem;">Waiting for users to log meal images.</p>
     </div>
 
     <div v-else class="chart-container" style="height: 300px; position: relative;">

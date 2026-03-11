@@ -14,15 +14,21 @@ async function fetchJSON(endpoint) {
     return res.json()
 }
 
-// ── Admin Auth ──
 export async function adminLogin(email, password) {
     const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Login failed')
+    
+    let data;
+    try {
+        data = await res.json()
+    } catch (err) {
+        throw new Error('Our servers are currently unreachable or malfunctioning. Please verify your connection or contact support.')
+    }
+    
+    if (!res.ok) throw new Error(data?.error || 'Login failed')
     return data
 }
 

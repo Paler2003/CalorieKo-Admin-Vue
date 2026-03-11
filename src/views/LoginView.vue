@@ -15,14 +15,14 @@
             <span>CK</span>
           </div>
           <h1 class="login-page__title">CalorieKo</h1>
-          <p class="login-page__subtitle">Research & Data Management Portal</p>
+          <p class="login-page__subtitle">Admin & Data Management Portal</p>
         </div>
 
         <!-- Login Form -->
         <form @submit.prevent="handleLogin" class="login-page__form">
           <!-- Email -->
           <div class="login-page__field">
-            <label for="email" class="login-page__label">Researcher ID / Email</label>
+            <label for="email" class="login-page__label">Admin ID / Email</label>
             <div class="login-page__input-wrapper">
               <UserIcon class="login-page__input-icon" />
               <input
@@ -51,30 +51,15 @@
           </div>
 
           <!-- Error Message -->
-          <div v-if="errorMessage" class="login-page__error">
-            <p>{{ errorMessage }}</p>
+          <div v-if="errorMessage" class="login-page__error ck-alert ck-alert--error" style="background-color: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; display: flex; align-items: flex-start; gap: 0.5rem; animation: fadeInUp 0.3s ease-out;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 0.125rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <p style="margin: 0; line-height: 1.4;">{{ errorMessage }}</p>
           </div>
 
           <!-- Submit -->
           <button type="submit" class="ck-btn ck-btn--primary ck-btn--full login-page__submit" :disabled="loading">
             {{ loading ? 'Authenticating...' : 'Authorize Access' }}
           </button>
-
-          <!-- Session toggle -->
-          <div class="login-page__session">
-            <label class="login-page__toggle" for="session-persistence">
-              <input
-                id="session-persistence"
-                type="checkbox"
-                v-model="sessionPersistence"
-                class="login-page__toggle-input"
-              />
-              <span class="login-page__toggle-track">
-                <span class="login-page__toggle-thumb"></span>
-              </span>
-              <span class="login-page__toggle-label">Keep me logged in for this research session</span>
-            </label>
-          </div>
         </form>
 
         <!-- Security Footer -->
@@ -83,7 +68,7 @@
             <ShieldIcon class="login-page__security-icon" />
             <div>
               <p class="login-page__security-text">
-                <strong>Security Protocol:</strong> Argon2id Hashing | Database Encryption: SQLCipher AES-256
+                <strong>Data Protection:</strong> Standard Bcrypt Hashing | Encrypted API Transit
               </p>
             </div>
           </div>
