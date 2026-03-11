@@ -89,6 +89,32 @@ export async function getFoods() {
     return fetchJSON('/foods')
 }
 
+export async function createFood(data) {
+    const res = await fetch(`${API_BASE}/foods`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    if (!res.ok) throw new Error('Failed to create food item')
+    return res.json()
+}
+
+export async function updateFood(id, data) {
+    const res = await fetch(`${API_BASE}/foods/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    if (!res.ok) throw new Error('Failed to update food item')
+    return res.json()
+}
+
+export async function deleteFood(id) {
+    const res = await fetch(`${API_BASE}/foods/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete food item')
+    return res.json()
+}
+
 // ── System Logs ──
 export async function getSystemLogs() {
     return fetchJSON('/system-logs')

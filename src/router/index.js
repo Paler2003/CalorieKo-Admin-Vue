@@ -24,6 +24,11 @@ const routes = [
                 component: () => import('../views/UserManagementView.vue')
             },
             {
+                path: 'food-database',
+                name: 'FoodDatabase',
+                component: () => import('../views/FoodDatabaseView.vue')
+            },
+            {
                 path: 'report-generator',
                 name: 'ReportGenerator',
                 component: () => import('../views/ReportGeneratorView.vue')
