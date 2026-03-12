@@ -267,18 +267,26 @@
       <div v-if="resetPasswordModal.show" class="modal-overlay" @click.self="closeActionModals">
         <div class="modal animate-fade-in">
           <div class="modal__header">
-            <h3>{{ resetPasswordModal.status === 'success' ? 'Password Reset Initiated' : 'Reset User Password' }}</h3>
+            <h3>
+              {{ resetPasswordModal.status === 'success' ? 'Password Reset Initiated' 
+               : resetPasswordModal.status === 'error' ? 'Reset Failed'
+               : 'Reset User Password' }}
+            </h3>
           </div>
           <div class="modal__body">
             <p v-if="resetPasswordModal.status === 'success'">
               A password reset link has been successfully sent to <strong>{{ resetPasswordModal.user?.email }}</strong>.
             </p>
+            <div v-else-if="resetPasswordModal.status === 'error'" style="padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;"><XCircleIcon :size="18" /> Operation Failed</p>
+              <p style="font-size: 0.875rem;">{{ resetPasswordModal.errorMessage }}</p>
+            </div>
             <p v-else>
               Are you sure you want to send a password reset link to <strong>{{ resetPasswordModal.user?.name || resetPasswordModal.user?.email }}</strong>?
             </p>
           </div>
           <div class="modal__footer">
-            <button v-if="resetPasswordModal.status === 'success'" class="btn btn--primary" @click="closeActionModals">Close</button>
+            <button v-if="resetPasswordModal.status === 'success' || resetPasswordModal.status === 'error'" class="btn btn--secondary" @click="closeActionModals">Close</button>
             <template v-else>
               <button class="btn btn--secondary" @click="closeActionModals">Cancel</button>
               <button class="btn btn--primary" @click="confirmResetPassword">Send Reset Link</button>
@@ -291,22 +299,34 @@
       <div v-if="deactivateModal.show" class="modal-overlay" @click.self="closeActionModals">
         <div class="modal animate-fade-in">
           <div class="modal__header">
-            <h3>{{ deactivateModal.user?.is_active !== false ? 'Deactivate User' : 'Reactivate User' }}</h3>
+            <h3>
+              {{ deactivateModal.status === 'error' ? 'Status Update Failed'
+               : deactivateModal.user?.is_active !== false ? 'Deactivate User' : 'Reactivate User' }}
+            </h3>
           </div>
           <div class="modal__body">
-            <p>
-              Are you sure you want to <strong>{{ deactivateModal.user?.is_active !== false ? 'deactivate' : 'reactivate' }}</strong> 
-              the account for <strong>{{ deactivateModal.user?.name || deactivateModal.user?.email }}</strong>?
-            </p>
-            <p v-if="deactivateModal.user?.is_active !== false" style="margin-top: 0.5rem; font-size: 0.8125rem; color: #ef4444;">
-              Deactivating will immediately revoke their access to the mobile application.
-            </p>
+            <div v-if="deactivateModal.status === 'error'" style="padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;"><XCircleIcon :size="18" /> Operation Failed</p>
+              <p style="font-size: 0.875rem;">{{ deactivateModal.errorMessage }}</p>
+            </div>
+            <template v-else>
+              <p>
+                Are you sure you want to <strong>{{ deactivateModal.user?.is_active !== false ? 'deactivate' : 'reactivate' }}</strong> 
+                the account for <strong>{{ deactivateModal.user?.name || deactivateModal.user?.email }}</strong>?
+              </p>
+              <p v-if="deactivateModal.user?.is_active !== false" style="margin-top: 0.5rem; font-size: 0.8125rem; color: #ef4444;">
+                Deactivating will immediately revoke their access to the mobile application.
+              </p>
+            </template>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="closeActionModals">Cancel</button>
-            <button class="btn" :class="deactivateModal.user?.is_active !== false ? 'btn--danger' : 'btn--primary'" @click="confirmDeactivate">
-              Yes, {{ deactivateModal.user?.is_active !== false ? 'Deactivate' : 'Reactivate' }}
-            </button>
+            <button v-if="deactivateModal.status === 'error'" class="btn btn--secondary" @click="closeActionModals">Close</button>
+            <template v-else>
+              <button class="btn btn--secondary" @click="closeActionModals">Cancel</button>
+              <button class="btn" :class="deactivateModal.user?.is_active !== false ? 'btn--danger' : 'btn--primary'" @click="confirmDeactivate">
+                Yes, {{ deactivateModal.user?.is_active !== false ? 'Deactivate' : 'Reactivate' }}
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -315,19 +335,30 @@
       <div v-if="deleteModal.show" class="modal-overlay" @click.self="closeActionModals">
         <div class="modal animate-fade-in">
           <div class="modal__header">
-            <h3 style="color: #ef4444;">Permanently Delete User</h3>
+            <h3 :style="deleteModal.status === 'error' ? 'color: #ef4444;' : 'color: #ef4444;'">
+              {{ deleteModal.status === 'error' ? 'Deletion Failed' : 'Permanently Delete User' }}
+            </h3>
           </div>
           <div class="modal__body">
-            <p>
-              Are you absolutely sure you want to delete <strong>{{ deleteModal.user?.name || deleteModal.user?.email }}</strong>?
-            </p>
-            <p style="margin-top: 0.5rem; font-size: 0.8125rem; font-weight: 500; color: #ef4444; padding: 0.75rem; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
-              This action cannot be undone. All meal logs, activity logs, and personal data associated with this account will be permanently erased.
-            </p>
+            <div v-if="deleteModal.status === 'error'" style="padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444;">
+              <p style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;"><XCircleIcon :size="18" /> Operation Failed</p>
+              <p style="font-size: 0.875rem;">{{ deleteModal.errorMessage }}</p>
+            </div>
+            <template v-else>
+              <p>
+                Are you absolutely sure you want to delete <strong>{{ deleteModal.user?.name || deleteModal.user?.email }}</strong>?
+              </p>
+              <p style="margin-top: 0.5rem; font-size: 0.8125rem; font-weight: 500; color: #ef4444; padding: 0.75rem; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
+                This action cannot be undone. All meal logs, activity logs, and personal data associated with this account will be permanently erased.
+              </p>
+            </template>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="closeActionModals">Cancel</button>
-            <button class="btn btn--danger" @click="confirmDelete">Yes, Delete Account</button>
+            <button v-if="deleteModal.status === 'error'" class="btn btn--secondary" @click="closeActionModals">Close</button>
+            <template v-else>
+              <button class="btn btn--secondary" @click="closeActionModals">Cancel</button>
+              <button class="btn btn--danger" @click="confirmDelete">Yes, Delete Account</button>
+            </template>
           </div>
         </div>
       </div>
@@ -376,7 +407,8 @@ import {
   FileText as FileTextIcon,
   MoreVertical as MoreVerticalIcon,
   Key as KeyIcon,
-  Trash as TrashIcon
+  Trash as TrashIcon,
+  XCircle as XCircleIcon
 } from 'lucide-vue-next'
 
 // State Management
@@ -392,9 +424,9 @@ const selectedUserForMenu = ref(null)
 const menuPosition = ref({ top: '0px', right: '0px' })
 
 // Custom Confirmation Modals State
-const resetPasswordModal = ref({ show: false, user: null, status: 'confirm' })
-const deactivateModal = ref({ show: false, user: null })
-const deleteModal = ref({ show: false, user: null })
+const resetPasswordModal = ref({ show: false, user: null, status: 'confirm', errorMessage: '' })
+const deactivateModal = ref({ show: false, user: null, status: 'confirm', errorMessage: '' })
+const deleteModal = ref({ show: false, user: null, status: 'confirm', errorMessage: '' })
 
 import { 
   getProfiles, 
@@ -501,15 +533,15 @@ const toggleMenu = (event, p) => {
 
 // Action Trigger Methods (Opening Modals instead of direct API/alert calls)
 const resetPassword = (p) => {
-  resetPasswordModal.value = { show: true, user: p, status: 'confirm' }
+  resetPasswordModal.value = { show: true, user: p, status: 'confirm', errorMessage: '' }
 }
 
 const deactivateUser = (p) => {
-  deactivateModal.value = { show: true, user: p }
+  deactivateModal.value = { show: true, user: p, status: 'confirm', errorMessage: '' }
 }
 
 const deleteUser = (p) => {
-  deleteModal.value = { show: true, user: p }
+  deleteModal.value = { show: true, user: p, status: 'confirm', errorMessage: '' }
 }
 
 const closeActionModals = () => {
@@ -527,8 +559,8 @@ const confirmResetPassword = async () => {
     const res = await resetProfilePassword(p.uid)
     resetPasswordModal.value.status = 'success' // Change completely to success view
   } catch(err) {
-    alert("Error reseting password. Please check connection.")
-    closeActionModals()
+    resetPasswordModal.value.status = 'error'
+    resetPasswordModal.value.errorMessage = err.message || "Error reseting password. Please check connection."
   }
 }
 
@@ -543,10 +575,10 @@ const confirmDeactivate = async () => {
     if (idx !== -1) {
       participants.value[idx].is_active = res.is_active
     }
-  } catch(err) {
-    alert("Error changing user status.")
-  } finally {
     closeActionModals()
+  } catch(err) {
+    deactivateModal.value.status = 'error'
+    deactivateModal.value.errorMessage = err.message || "Error changing user status."
   }
 }
 
@@ -558,10 +590,10 @@ const confirmDelete = async () => {
     await deleteProfile(p.uid)
     // Remove from table visually
     participants.value = participants.value.filter(u => u.uid !== p.uid)
-  } catch(err) {
-    alert("Error deleting user.")
-  } finally {
     closeActionModals()
+  } catch(err) {
+    deleteModal.value.status = 'error'
+    deleteModal.value.errorMessage = err.message || "Error deleting user."
   }
 }
 

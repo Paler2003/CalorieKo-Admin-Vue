@@ -45,18 +45,19 @@
 
     <!-- Main Content -->
     <div class="main">
-      <!-- Top Header Bar -->
+  <!-- Top Header Bar -->
       <header class="topbar">
         <div class="topbar__left">
           <h1 class="topbar__title">{{ pageTitle }}</h1>
           <div class="topbar__location">
             <MapPinIcon class="topbar__location-icon" />
-            <span>Node Location: Tagum City, Davao</span>
+            <span>Node Location: {{ nodeLocation }}</span>
           </div>
         </div>
-        <div class="topbar__encryption">
-          <LockIcon class="topbar__encryption-icon" />
-          <span>System Encryption: Active</span>
+        <div class="topbar__encryption" :class="{ 'topbar__encryption--inactive': !isEncrypted }">
+          <LockIcon v-if="isEncrypted" class="topbar__encryption-icon" />
+          <UnlockIcon v-else class="topbar__encryption-icon" />
+          <span>System Encryption: {{ isEncrypted ? 'Active' : 'Inactive' }}</span>
         </div>
       </header>
 
@@ -91,8 +92,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router' // Add useRouter
+import { computed, ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutDashboard,
   Users,
@@ -101,7 +102,8 @@ import {
   Database,
   MapPin as MapPinIcon,
   Lock as LockIcon,
-  LogOut as LogOutIcon // Add LogOut icon
+  Unlock as UnlockIcon,
+  LogOut as LogOutIcon
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -118,11 +120,69 @@ const isActive = (routeName) => route.name === routeName
 
 const pageTitle = computed(() => {
   const currentNav = navItems.find(item => item.routeName === route.name)
-  if (route.name === 'Overview') return 'Research Overview'
+  if (route.name === 'Overview') return 'Admin Overview'
   return currentNav?.name || 'Dashboard'
 })
 
 const showLogoutModal = ref(false)
+const nodeLocation = ref('Determining Node Network...')
+const isEncrypted = ref(true)
+
+onMounted(() => {
+  // Check for secure context (HTTPS or localhost)
+  isEncrypted.value = window.isSecureContext || window.location.protocol === 'https:'
+  
+  const fetchFallbackIPLocation = async () => {
+    try {
+      const response = await fetch('https://ipapi.co/json/')
+      const data = await response.json()
+      if (data.city && (data.region || data.country_name)) {
+        nodeLocation.value = `${data.city}, ${data.region || data.country_name} (Approx)`
+      } else {
+        nodeLocation.value = 'Tagum City, Davao'
+      }
+    } catch (error) {
+      console.error('Failed to pinpoint node location via IP:', error)
+      nodeLocation.value = 'Tagum City, Davao' // Final fallback
+    }
+  }
+
+  const fetchPreciseLocation = async (lat, lon) => {
+    try {
+      // Using OpenStreetMap's free Nominatim reverse geocoding API
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+      const data = await response.json()
+      
+      if (data && data.address) {
+        const address = data.address
+        const city = address.city || address.town || address.municipality || address.county || 'Unknown City'
+        const region = address.state || address.region || 'Philippines'
+        nodeLocation.value = `${city}, ${region}`
+      } else {
+        fetchFallbackIPLocation()
+      }
+    } catch (err) {
+      console.error('Reverse geocoding failed:', err)
+      fetchFallbackIPLocation()
+    }
+  }
+
+  // Attempt to use Geolocation API for real hardware location instead of ISP routing hubs
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        fetchPreciseLocation(position.coords.latitude, position.coords.longitude)
+      },
+      (error) => {
+        console.warn('Precise geolocation failed or was denied. Falling back to IP estimation.', error)
+        fetchFallbackIPLocation()
+      },
+      { timeout: 10000 }
+    )
+  } else {
+    fetchFallbackIPLocation()
+  }
+})
 
 // Add Logout Function
 const handleLogout = () => {
@@ -317,13 +377,20 @@ const cancelLogout = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--ck-primary-light);
-  border: 1px solid var(--ck-primary-border);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   padding: 0.5rem 1rem;
   border-radius: var(--ck-radius-lg);
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--ck-primary);
+  color: #10b981;
+  transition: all 0.3s ease;
+}
+
+.topbar__encryption--inactive {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
 }
 
 .topbar__encryption-icon {
